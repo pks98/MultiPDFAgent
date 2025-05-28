@@ -94,7 +94,7 @@ def answer_question(query):
     """
     # Step 1: Ask LLM to break down the question
     sub_questions = get_sub_questions(query)
-    
+
     # Step 2: For each document, retrieve relevant context for each sub-question
     doc_contexts = defaultdict(list)
     for doc_name in doc_indices:
@@ -129,8 +129,3 @@ Your step-by-step reasoning and answer (with sources):
     else:
         answer_text = str(answer_response)
     return answer_text
-
-if __name__ == '__main__':
-    user_query = input("Ask your legal question: ")
-    answer = answer_question(user_query)
-    print("\n---\nAnswer:\n", answer)
