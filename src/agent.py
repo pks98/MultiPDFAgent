@@ -4,22 +4,25 @@ import json
 import numpy as np
 import os
 import sys
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.chat_models import ChatOpenAI
+from langchain_openai import OpenAIEmbeddings
+from langchain_openai import ChatOpenAI
 from pathlib import Path
 from collections import defaultdict
 
+from dotenv import load_dotenv
+# Load environment variables from .env file if it exists
+load_dotenv()
 # Check for OpenAI API key
 if not os.environ.get('OPENAI_API_KEY'):
     print('[ERROR] Please set your OPENAI_API_KEY environment variable.')
     sys.exit(1)
 
 # Load FAISS index and metadata
-data_dir = Path(__file__).parent.parent
-index = faiss.read_index(str(data_dir / 'faiss.index'))
-with open(data_dir / 'faiss_metadata.json', 'r', encoding='utf-8') as f:
+indexes_dir = Path(__file__).parent.parent / 'indexes'
+index = faiss.read_index(str(indexes_dir / 'faiss.index'))
+with open(indexes_dir / 'faiss_metadata.json', 'r', encoding='utf-8') as f:
     metadatas = json.load(f)
-with open(data_dir / 'pdf_chunks.jsonl', 'r', encoding='utf-8') as f:
+with open(indexes_dir / 'pdf_chunks.jsonl', 'r', encoding='utf-8') as f:
     chunks = [json.loads(line) for line in f]
 
 embeddings = OpenAIEmbeddings()
@@ -78,7 +81,12 @@ Question: {query}
 
 Sub-questions/steps:
 """
-    sub_questions = [s for s in llm.predict(breakdown_prompt).strip().split('\n') if s.strip()]
+    breakdown_response = llm.invoke(breakdown_prompt)
+    if hasattr(breakdown_response, 'content'):
+        breakdown_text = breakdown_response.content
+    else:
+        breakdown_text = str(breakdown_response)
+    sub_questions = [s for s in breakdown_text.strip().split('\n') if s.strip()]
     # Step 2: For each document, retrieve relevant context for each sub-question
     doc_contexts = defaultdict(list)
     for doc_name in doc_indices:
@@ -107,8 +115,12 @@ User Question:
 
 Your step-by-step reasoning and answer (with sources):
 """
-    response = llm.predict(prompt)
-    return response
+    answer_response = llm.invoke(prompt)
+    if hasattr(answer_response, 'content'):
+        answer_text = answer_response.content
+    else:
+        answer_text = str(answer_response)
+    return answer_text
 
 if __name__ == '__main__':
     user_query = input("Ask your legal question: ")
