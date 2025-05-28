@@ -67,13 +67,10 @@ def retrieve_from_doc(doc_name, query, top_k=8):
             })
     return results
 
-def answer_question(query):
+def get_sub_questions(query):
     """
-    1. Break down the question into sub-questions (CoT prompt)
-    2. For each document, retrieve relevant context for each sub-question
-    3. Synthesize a comprehensive answer with sources, grouped by document
+    Returns a list of sub-questions (reasoning steps) for a given query.
     """
-    # Step 1: Ask LLM to break down the question
     breakdown_prompt = f"""
 Break down the following legal question into logical sub-questions or reasoning steps. List each step as a separate line.
 
@@ -87,6 +84,17 @@ Sub-questions/steps:
     else:
         breakdown_text = str(breakdown_response)
     sub_questions = [s for s in breakdown_text.strip().split('\n') if s.strip()]
+    return sub_questions
+
+def answer_question(query):
+    """
+    1. Break down the question into sub-questions (CoT prompt)
+    2. For each document, retrieve relevant context for each sub-question
+    3. Synthesize a comprehensive answer with sources, grouped by document
+    """
+    # Step 1: Ask LLM to break down the question
+    sub_questions = get_sub_questions(query)
+    
     # Step 2: For each document, retrieve relevant context for each sub-question
     doc_contexts = defaultdict(list)
     for doc_name in doc_indices:
