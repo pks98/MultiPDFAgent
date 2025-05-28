@@ -22,5 +22,3 @@
    - Build the index
    - Start the agent/chatbot
 
-## Next Steps
-We will implement each script step by step.
